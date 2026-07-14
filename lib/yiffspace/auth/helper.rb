@@ -1,11 +1,19 @@
 # frozen_string_literal: true
 
 require("active_support/concern")
+require("securerandom")
 
 module YiffSpace
   module Auth
     module Helper
       extend(ActiveSupport::Concern)
+
+      # auth/user session values (raw Discord profile + OIDC token claims) can easily exceed a
+      # cookie's ~4KB limit, so the session cookie itself only holds an opaque pointer - the real
+      # payload lives in Rails.cache (already a hard dependency of this module, see
+      # #sync_auth_if_dirty! below), keyed off that pointer.
+      SESSION_CACHE_KEY = "yiffspace:auth:session:%s"
+      SESSION_CACHE_TTL = 30.days
 
       module ClassMethods
         def set_client_name(name) # rubocop:disable Naming/AccessorMethodName
@@ -27,7 +35,7 @@ module YiffSpace
       end
 
       def auth_raw
-        session[auth_client_config.auth_session_key]
+        read_session_cache(auth_client_config.auth_session_key)
       end
 
       def auth
@@ -41,16 +49,16 @@ module YiffSpace
       end
 
       def auth=(value)
-        value                                        = nil if value.is_a?(AuthInfo::Anonymous)
-        session[auth_client_config.auth_session_key] = value&.to_session
+        value = nil if value.is_a?(AuthInfo::Anonymous)
+        write_session_cache(auth_client_config.auth_session_key, value&.to_session)
       end
 
       def reset_auth!
-        session.delete(auth_client_config.auth_session_key)
+        write_session_cache(auth_client_config.auth_session_key, nil)
       end
 
       def user_raw
-        session[auth_client_config.user_session_key]
+        read_session_cache(auth_client_config.user_session_key)
       end
 
       def user
@@ -64,12 +72,12 @@ module YiffSpace
       end
 
       def user=(value)
-        value                                        = nil if value.is_a?(UserInfo::Anonymous)
-        session[auth_client_config.user_session_key] = value&.to_session
+        value = nil if value.is_a?(UserInfo::Anonymous)
+        write_session_cache(auth_client_config.user_session_key, value&.to_session)
       end
 
       def reset_user!
-        session.delete(auth_client_config.user_session_key)
+        write_session_cache(auth_client_config.user_session_key, nil)
       end
 
       def full_reset!
@@ -146,6 +154,32 @@ module YiffSpace
 
       def client_name=(value)
         request.env[CLIENT_NAME_ENV] = value.to_sym
+      end
+
+      private
+
+      def read_session_cache(session_key)
+        token = session[session_key]
+        return nil if token.blank?
+
+        Rails.cache.read(format(SESSION_CACHE_KEY, token))
+      end
+
+      # A fresh token is minted on every write (rather than reusing/refreshing the existing one)
+      # so a stale token left over from a previous login can never be replayed to read whatever
+      # happens to be written at that cache key next.
+      def write_session_cache(session_key, value)
+        old_token = session[session_key]
+        Rails.cache.delete(format(SESSION_CACHE_KEY, old_token)) if old_token.present?
+
+        if value.nil?
+          session.delete(session_key)
+          return
+        end
+
+        token = SecureRandom.hex(32)
+        Rails.cache.write(format(SESSION_CACHE_KEY, token), value, expires_in: SESSION_CACHE_TTL)
+        session[session_key] = token
       end
 
       module Scoped
