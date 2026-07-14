@@ -1,0 +1,24 @@
+name: Publish
+permissions:
+  contents: read
+  id-token: write
+on:
+  workflow_dispatch:
+  release:
+    types: [ released ]
+
+jobs:
+  rubocop:
+    uses: ./.github/workflows/rubocop.yml
+  zeitwerk:
+    uses: ./.github/workflows/zeitwerk.yml
+  publish:
+    needs: [ rubocop, zeitwerk ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - uses: rubygems/release-gem@v1

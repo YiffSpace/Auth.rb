@@ -1,0 +1,17 @@
+inherit_mode:
+  merge:
+    - Exclude
+    - Include
+
+inherit_gem:
+  rubocop-yiffspace:
+    - config/rails.yml
+
+plugins:
+  - rubocop-erb
+  - rubocop-rails
+  - rubocop-yiffspace
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.4

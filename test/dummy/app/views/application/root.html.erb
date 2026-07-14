@@ -1,0 +1,6 @@
+<% if logged_in? %>
+  <%= link_to("Log Out", url_helpers.logout_path) %><br>
+  <%= user.avatar.url %>
+<% else %>
+  <%= link_to("Log In", url_helpers.auth_path) %>
+<% end %>

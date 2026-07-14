@@ -1,0 +1,14 @@
+<h1 class="title">Permissions</h1>
+<% if logged_in? %>
+  <% if auth.permissions.any? %>
+    <ul class="permissions-list">
+      <% auth.permissions.each do |perm| %>
+        <li class="permission"><%= perm %></li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="message">You have no permissions.</p>
+  <% end %>
+<% else %>
+  <p class="message">You are not logged in.</p>
+<% end %>

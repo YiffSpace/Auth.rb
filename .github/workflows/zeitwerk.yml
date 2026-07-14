@@ -1,0 +1,19 @@
+name: Zeitwerk
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_call:
+
+jobs:
+  zeitwerk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - run: bundle exec ruby -e "require('yiffspace/auth'); Zeitwerk::Loader.eager_load_all"
