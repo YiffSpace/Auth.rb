@@ -13,7 +13,7 @@ GIT
 PATH
   remote: .
   specs:
-    yiffspace-auth (0.0.2)
+    yiffspace-auth (0.0.3)
       httparty (>= 0.24)
       logto (>= 0.2.0)
       rails (>= 7.1)
@@ -444,7 +444,7 @@ CHECKSUMS
   websocket-driver (0.8.2) sha256=97c556b019bf3410b4961002ac501621e9322d3f8a7bc02161a09301cc4c4146
   websocket-extensions (0.1.5) sha256=1c6ba63092cda343eb53fc657110c71c754c56484aad42578495227d717a8241
   yiffspace (0.1.2)
-  yiffspace-auth (0.0.2)
+  yiffspace-auth (0.0.3)
   zeitwerk (2.8.2) sha256=7212a61311083c604184b1ea2574b9aa05cd14f855a0841c06985cabe9181d12
 
 BUNDLED WITH
